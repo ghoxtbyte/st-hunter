@@ -40,3 +40,6 @@ python3 main.py --subdomains-file fqdns.txt --output results.txt
 ## Requirements
 - Python 3.6+
 - Tools: dig, subfinder, shodanx, jq, curl, anew
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
