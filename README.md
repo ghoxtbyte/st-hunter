@@ -41,5 +41,9 @@ python3 main.py --subdomains-file fqdns.txt --output results.txt
 - Python 3.6+
 - Tools: dig, subfinder, shodanx, jq, curl, anew
 
+## Subdomain Takeover Verification
+When a potential takeover vulnerability is found by **st-hunter**, you can verify if it's a known takeover target by checking it on [can-i-take-over-xyz](https://github.com/EdOverflow/can-i-take-over-xyz).
+Just search for the subdomain in the [can-i-take-over-xyz database](https://github.com/EdOverflow/can-i-take-over-xyz) to see if it’s already listed or to get more details about the vulnerability.
+
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
