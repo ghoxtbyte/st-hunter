@@ -13,7 +13,8 @@ ST-Hunter is a powerful and efficient tool for detecting subdomain takeover vuln
 ```bash
 git clone https://github.com/[YourGitHub]/ST-Hunter.git
 cd ST-Hunter
-pip install -r requirements.txt
+chmod +x setup.sh
+./setup.sh
 ```
 
 ## Usage 
