@@ -14,7 +14,7 @@ echo "export PATH=\$PATH:/usr/local/go/bin:\$HOME/go/bin" >> ~/.bashrc && source
 apt install -y jq || { echo "[-] JQ install failed"; exit 1; }
 pip install pipx
 pipx ensurepath && source ~/.*rc
-pip install git+https://github.com/sanjai-AK47/ShodanX --break-system-packages
+pip install git+https://github.com/AN0N9M0US/ShodanX.git --break-system-packages
 go install -v github.com/tomnomnom/assetfinder@latest
 go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 go install -v github.com/tomnomnom/anew@latest
