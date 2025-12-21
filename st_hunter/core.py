@@ -9,7 +9,6 @@ from .output import print_status_line, format_time, output_lines, save_output
 
 CHUNK_SIZE = 1000
 CONCURRENCY = 200
-# sema definition removed from global scope to fix Event Loop error
 
 progress = {
     "checked": 0,
