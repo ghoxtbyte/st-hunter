@@ -9,7 +9,7 @@ from .output import print_status_line, format_time, output_lines, save_output
 
 CHUNK_SIZE = 1000
 CONCURRENCY = 200
-sema = asyncio.Semaphore(CONCURRENCY)
+# sema definition removed from global scope to fix Event Loop error
 
 progress = {
     "checked": 0,
@@ -18,7 +18,7 @@ progress = {
     "start_time": 0
 }
 
-async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns, silent_mode):
+async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns, silent_mode, sema):
     async with sema:
         try:
             if dns_servers:
@@ -56,10 +56,14 @@ async def scan_fqdn_list(fqdns, dns_servers, current_domain_ns, silent_mode, out
     progress["found"] = 0
     progress["total"] = len(fqdns)
     progress["start_time"] = time.time()
+    
+    # Initialize Semaphore inside the running loop
+    sema = asyncio.Semaphore(CONCURRENCY)
+    
     found = []
     chunks = [fqdns[i:i + CHUNK_SIZE] for i in range(0, len(fqdns), CHUNK_SIZE)]
     for chunk in chunks:
-        tasks = [check_subdomain_fqdn(fqdn, found, dns_servers, current_domain_ns, silent_mode) for fqdn in chunk]
+        tasks = [check_subdomain_fqdn(fqdn, found, dns_servers, current_domain_ns, silent_mode, sema) for fqdn in chunk]
         await asyncio.gather(*tasks)
         await asyncio.sleep(0.2)
     if not silent_mode:
@@ -81,10 +85,14 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file)
     progress["total"] = len(subdomains)
     progress["start_time"] = time.time()
     random.shuffle(subdomains)
+    
+    # Initialize Semaphore inside the running loop
+    sema = asyncio.Semaphore(CONCURRENCY)
+    
     chunks = [subdomains[i:i + CHUNK_SIZE] for i in range(0, len(subdomains), CHUNK_SIZE)]
     found = []
     for chunk in chunks:
-        tasks = [check_subdomain_fqdn(f"{sub}.{domain}", found, dns_servers, current_domain_ns, silent_mode) for sub in chunk]
+        tasks = [check_subdomain_fqdn(f"{sub}.{domain}", found, dns_servers, current_domain_ns, silent_mode, sema) for sub in chunk]
         await asyncio.gather(*tasks)
         await asyncio.sleep(0.2)
     if not silent_mode:
