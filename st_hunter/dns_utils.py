@@ -21,14 +21,15 @@ async def perform_axfr(domain, ns_records, silent_mode):
     if not silent_mode:
         print(f"[*] AXFR testing for {domain}")
     if not ns_records:
-        print(f"[-] Not Found for {domain}")
+        if not silent_mode:
+            print(f"[-] Not Found for {domain}")
         return
     for ns in ns_records:
         axfr_output = await dig_full(domain, "AXFR", ns)
         records = [ln for ln in axfr_output.splitlines() if "\tIN\t" in ln]
         if records:
-            print(f"[+] AXFR succeeded for {domain} via {ns}")
             if not silent_mode:
+                print(f"[+] AXFR succeeded for {domain} via {ns}")
                 for ln in records[:10]:
                     print(ln)
                 if len(records) > 10:
@@ -36,7 +37,11 @@ async def perform_axfr(domain, ns_records, silent_mode):
             
             line = f"{domain} AXFR SUCCESS via {ns}"
             output_lines.append(line)
+            
             if not silent_mode:
                 print(f"\n[+] AXFR SUCCESS: {line}")
+            else:
+                print(line)
             return
-    print(f"[-] Not Found for {domain}")
+    if not silent_mode:
+        print(f"[-] Not Found for {domain}")
