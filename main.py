@@ -27,8 +27,11 @@ GitHub: https://github.com/ghoxtbyte
 """
 
 def main():
-    print(BANNER)
     args = parse_arguments()
+    
+    if not args.silent:
+        print(BANNER)
+        
     run_scan(args)
 
 if __name__ == "__main__":
