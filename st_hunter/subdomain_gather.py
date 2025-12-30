@@ -51,7 +51,7 @@ def execute_tools(target):
 
     wayback_cmd = (
         f"curl -sk 'http://web.archive.org/cdx/search/cdx?url=*.{target}&output=txt&fl=original&collapse=urlkey&page=' | "
-        r"awk -F/ '{gsub(/:.*/, \"\", $3); print $3}' | "
+        "awk -F/ '{gsub(/:.*/, \"\", $3); print $3}' | "
         r"sort -u > wayback.txt"
     )
     subprocess.run(wayback_cmd, shell=True)
