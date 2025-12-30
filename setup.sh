@@ -9,7 +9,7 @@ echo -e "${BLUE}[+] Starting full setup for ST-Hunter (with Recon capabilities).
 
 # 1. Update & Base Dependencies
 echo -e "${GREEN}[*] Updating system and installing base dependencies...${NC}"
-sudo apt update && sudo apt upgrade -y
+sudo apt update
 sudo apt install -y python3-pip python3-venv git curl wget build-essential dnsutils jq parallel unzip libpcap-dev || { echo -e "${RED}[-] Base install failed${NC}"; exit 1; }
 
 # 2. Install/Update Golang 
