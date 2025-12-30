@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import sys
+sys.stdout.reconfigure(line_buffering=True)
+
 from st_hunter.cli import parse_arguments
 from st_hunter.core import run_scan
 
