@@ -120,7 +120,11 @@ def run_scan(args):
     domains = [args.domain] if args.domain else load_lines(args.domain_list) if args.domain_list else []
     for domain in domains:
         if args.online_only:
+            if not silent_mode:
+                print("\n[*] Starting online subdomain reconnaissance... (This process may take some time)")
             run_subdomain_gathering(domain)
+            if not silent_mode:
+                print("[+] Subdomain reconnaissance finished.\n")
             gathered = load_lines("all_subdomains.txt")
             subs = [s.replace(f".{domain}", "") for s in gathered if s.endswith(f".{domain}")]
             asyncio.run(scan_domain(domain, subs, dns_servers, silent_mode, output_file))
@@ -134,7 +138,11 @@ def run_scan(args):
                 continue
             asyncio.run(scan_domain(domain, bruteforce_list, dns_servers, silent_mode, output_file))
         else:
+            if not silent_mode:
+                print("\n[*] Starting online subdomain reconnaissance... (This process may take some time)")
             run_subdomain_gathering(domain)
+            if not silent_mode:
+                print("[+] Subdomain reconnaissance finished.\n")
             gathered = load_lines("all_subdomains.txt")
             subs = [s.replace(f".{domain}", "") for s in gathered if s.endswith(f".{domain}")]
             asyncio.run(scan_domain(domain, subs, dns_servers, silent_mode, output_file))
