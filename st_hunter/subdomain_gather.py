@@ -104,13 +104,15 @@ def run_subdomain_gathering(initial_domain, silent=False):
         scanned_domains.add(current_target)
 
         all_files_str = " ".join(TEMP_FILES[:-1])
-        merge_cmd = f"cat {all_files_str} 2>/dev/null | anew all_subdomains.txt"
+
+        merge_cmd = f"cat {all_files_str} 2>/dev/null | anew all_subdomains.txt > /dev/null 2>&1"
         subprocess.run(merge_cmd, shell=True)
 
         subprocess.run("grep '^\\*\\.' all_subdomains.txt > temp_wildcards.txt", shell=True)
         
         if os.path.exists("temp_wildcards.txt") and os.path.getsize("temp_wildcards.txt") > 0:
-            subprocess.run("cat temp_wildcards.txt | anew wildcard_domains.txt", shell=True)
+
+            subprocess.run("cat temp_wildcards.txt | anew wildcard_domains.txt > /dev/null 2>&1", shell=True)
             subprocess.run("grep -v '^\\*\\.' all_subdomains.txt > all_subdomains.clean && mv all_subdomains.clean all_subdomains.txt", shell=True)
 
             with open("temp_wildcards.txt", "r") as f:
