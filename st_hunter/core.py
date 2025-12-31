@@ -44,7 +44,6 @@ async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns,
                         line = f"{fqdn} {target}"
                         output_lines.append(line)
                         if silent_mode:
-د
                             print(line)
                         else:
                             print(f"\n[+] {fqdn:<40} → {target:<50} [CNAME → NXDOMAIN]")
