@@ -116,16 +116,10 @@ def run_scan(args):
     save_subs = not args.no_save_subdomains
     dns_servers = [args.dns_server] if args.dns_server else load_lines(args.dns_list) if args.dns_list else []
     
+    
     if args.subdomains_file:
         fqdns = load_lines(args.subdomains_file)
-        domains_map = {}
-        for fqdn in fqdns:
-            if '.' not in fqdn:
-                continue
-            sub, domain_part = fqdn.split('.', 1)
-            domains_map.setdefault(domain_part, []).append(sub)
-        for domain_part, subs in domains_map.items():
-            asyncio.run(scan_domain(domain_part, subs, dns_servers, silent_mode, output_file, save_subs))
+        asyncio.run(scan_fqdn_list(fqdns, dns_servers, None, silent_mode, output_file))
         if not silent_mode:
             print()
         return
