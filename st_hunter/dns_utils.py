@@ -1,5 +1,6 @@
 import asyncio
 import sys
+from datetime import datetime
 from .output import output_lines, print_status_line
 
 async def dig_full(domain, rtype, dns_server=None):
@@ -18,7 +19,7 @@ async def get_ns_records(domain):
     ns_output = await dig_full(domain, "NS")
     return [line.split()[-1].rstrip('.') for line in ns_output.splitlines() if "\tNS\t" in line]
 
-async def perform_axfr(domain, ns_records, silent_mode):
+async def perform_axfr(domain, ns_records, silent_mode, save_subs=True):
     discovered_subs = set()
     if not silent_mode:
         sys.stdout.write(f"\r[*] AXFR testing for {domain}...".ljust(120))
@@ -31,14 +32,18 @@ async def perform_axfr(domain, ns_records, silent_mode):
         
         records = [ln for ln in axfr_output.splitlines() if "\tIN\t" in ln or " IN " in ln]
         if records:
+            
+            msg = f"[+] AXFR VULNERABLE: {domain} via {ns}"
             if not silent_mode:
                 sys.stdout.write("\r" + " " * 120 + "\r")
-                print(f"[+] AXFR succeeded for {domain} via {ns}")
-            
-            for ln in records:
-                if not silent_mode:
-                    print(f"    {ln}")
+                print(msg)
+            else:
                 
+                print(msg)
+            
+            axfr_full_text = []
+            for ln in records:
+                axfr_full_text.append(ln)
                 
                 parts = ln.split()
                 if parts:
@@ -46,4 +51,20 @@ async def perform_axfr(domain, ns_records, silent_mode):
                     if fqdn.endswith(domain) and fqdn != domain:
                         discovered_subs.add(fqdn)
                         
+            
+            output_lines.append(f"[AXFR VULNERABILITY] Domain: {domain} | NS: {ns}")
+            
+            
+            if save_subs:
+                timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                axfr_filename = f"AXFR-{domain}-{timestamp}.txt"
+                try:
+                    with open(axfr_filename, "a") as f:
+                        f.write(f"[*] AXFR Results for {domain} via {ns}\n")
+                        f.write("\n".join(axfr_full_text) + "\n")
+                        f.write("-" * 50 + "\n")
+                except Exception as e:
+                    if not silent_mode:
+                        print(f"[!] Error saving AXFR file: {e}")
+                    
     return discovered_subs
