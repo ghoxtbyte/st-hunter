@@ -197,4 +197,7 @@ def run_subdomain_gathering(initial_domain, silent=False, save=True):
             if not silent:
                 print("[!] Subdomains were not saved to a file (--no-save-subdomains).")
 
+    if os.path.exists("wildcard_domains.txt"):
+        os.remove("wildcard_domains.txt")
+
     return gathered_list
