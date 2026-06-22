@@ -2,10 +2,12 @@
 
 import sys
 import shutil
+import os
 sys.stdout.reconfigure(line_buffering=True)
 
 from st_hunter.cli import parse_arguments
 from st_hunter.core import run_scan
+from st_hunter.subdomain_gather import clean_temp_files
 
 BANNER = """
 
@@ -62,4 +64,18 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n[!] Scan interrupted by user.")
+        print("\n[!] Scan interrupted by user. Cleaning up temporary files...")
+        try:
+            # پاک کردن فایل‌های موقت ابزارهای آنلاین
+            clean_temp_files()
+            
+            # پاک کردن فایل‌های موقت ترکیبی
+            if os.path.exists("temp_all_subdomains.txt"):
+                os.remove("temp_all_subdomains.txt")
+            if os.path.exists("wildcard_domains.txt"):
+                os.remove("wildcard_domains.txt")
+                
+        except Exception as e:
+            print(f"[!] Error during cleanup: {e}")
+            
+        sys.exit(1)
