@@ -47,7 +47,6 @@ async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns,
                         if silent_mode:
                             print(line)
                         else:
-                            
                             sys.stdout.write("\r" + " " * 120 + "\r")
                             print(f"[+] Vulnerable: {fqdn:<40} → {target:<50}")
         finally:
@@ -83,12 +82,8 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file)
             sys.stdout.flush()
         current_domain_ns = await get_ns_records(domain)
     
-    
     axfr_fqdns = await perform_axfr(domain, current_domain_ns, silent_mode)
-    
-    
     axfr_subs = [f.replace(f".{domain}", "") for f in axfr_fqdns if f.endswith(f".{domain}")]
-    
     
     subdomains = list(set(subdomains) | set(axfr_subs))
     
@@ -145,6 +140,7 @@ def run_scan(args):
                 print("[+] Subdomain reconnaissance finished.\n")
             subs = [s.replace(f".{domain}", "") for s in gathered if s.endswith(f".{domain}")]
             asyncio.run(scan_domain(domain, subs, dns_servers, silent_mode, output_file))
+            
         elif args.brute_force_only:
             if args.wordlist:
                 bruteforce_list = load_lines(args.wordlist)
@@ -154,6 +150,7 @@ def run_scan(args):
                 print("[!] default-subs.txt not found and no --wordlist provided.")
                 continue
             asyncio.run(scan_domain(domain, bruteforce_list, dns_servers, silent_mode, output_file))
+            
         else:
             if not silent_mode:
                 print("\n[*] Starting online subdomain reconnaissance... (This process may take some time)")
@@ -161,15 +158,18 @@ def run_scan(args):
             if not silent_mode:
                 print("[+] Subdomain reconnaissance finished.\n")
             subs = [s.replace(f".{domain}", "") for s in gathered if s.endswith(f".{domain}")]
-            asyncio.run(scan_domain(domain, subs, dns_servers, silent_mode, output_file))
+            
             if args.wordlist:
                 bruteforce_list = load_lines(args.wordlist)
             elif Path("default-subs.txt").exists():
                 bruteforce_list = load_lines("default-subs.txt")
             else:
-                print("[!] default-subs.txt not found and no --wordlist provided.")
-                continue
-            asyncio.run(scan_domain(domain, bruteforce_list, dns_servers, silent_mode, output_file))
+                bruteforce_list = []
+                print("[!] default-subs.txt not found and no --wordlist provided. Continuing with online results only.")
+                
+            
+            combined_subs = list(set(subs) | set(bruteforce_list))
+            asyncio.run(scan_domain(domain, combined_subs, dns_servers, silent_mode, output_file))
             
     if not silent_mode:
         print()
