@@ -111,6 +111,7 @@ def run_scan(args):
     global output_lines
     silent_mode = args.silent
     output_file = args.output_file
+    save_subs = not args.no_save_subdomains
     dns_servers = [args.dns_server] if args.dns_server else load_lines(args.dns_list) if args.dns_list else []
     
     if args.subdomains_file:
@@ -132,10 +133,9 @@ def run_scan(args):
         if args.online_only:
             if not silent_mode:
                 print("\n[*] Starting online subdomain reconnaissance... (This process may take some time)")
-            run_subdomain_gathering(domain, silent=silent_mode)
+            gathered = run_subdomain_gathering(domain, silent=silent_mode, save=save_subs)
             if not silent_mode:
                 print("[+] Subdomain reconnaissance finished.\n")
-            gathered = load_lines("all_subdomains.txt")
             subs = [s.replace(f".{domain}", "") for s in gathered if s.endswith(f".{domain}")]
             asyncio.run(scan_domain(domain, subs, dns_servers, silent_mode, output_file))
         elif args.brute_force_only:
@@ -150,10 +150,9 @@ def run_scan(args):
         else:
             if not silent_mode:
                 print("\n[*] Starting online subdomain reconnaissance... (This process may take some time)")
-            run_subdomain_gathering(domain, silent=silent_mode)
+            gathered = run_subdomain_gathering(domain, silent=silent_mode, save=save_subs)
             if not silent_mode:
                 print("[+] Subdomain reconnaissance finished.\n")
-            gathered = load_lines("all_subdomains.txt")
             subs = [s.replace(f".{domain}", "") for s in gathered if s.endswith(f".{domain}")]
             asyncio.run(scan_domain(domain, subs, dns_servers, silent_mode, output_file))
             if args.wordlist:
