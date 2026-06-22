@@ -2,6 +2,7 @@ import subprocess
 import shutil
 import os
 import re
+from datetime import datetime
 
 TEMP_FILES = [
     "sublist.txt", "shodax.txt", "subs_domain.txt", "alienvault_subs.txt", 
@@ -93,9 +94,9 @@ def execute_tools(target, silent=False):
     )
     subprocess.run(abuseipdb_cmd, shell=True)
 
-def run_subdomain_gathering(initial_domain, silent=False):
+def run_subdomain_gathering(initial_domain, silent=False, save=True):
     clean_temp_files()
-    subprocess.run("rm -f all_subdomains.txt wildcard_domains.txt", shell=True)
+    subprocess.run("rm -f temp_all_subdomains.txt wildcard_domains.txt", shell=True)
 
     scan_queue = [initial_domain]
     scanned_domains = set()
@@ -110,14 +111,13 @@ def run_subdomain_gathering(initial_domain, silent=False):
         scanned_domains.add(current_target)
 
         all_files_str = " ".join(TEMP_FILES[:-1])
-        merge_cmd = f"cat {all_files_str} 2>/dev/null | awk 'NF' | grep -F '.' | anew all_subdomains.txt > /dev/null 2>&1"
+        merge_cmd = f"cat {all_files_str} 2>/dev/null | awk 'NF' | grep -F '.' | anew temp_all_subdomains.txt > /dev/null 2>&1"
         subprocess.run(merge_cmd, shell=True)
         clean_temp_files()
 
+        if not os.path.exists("temp_all_subdomains.txt"): continue
         
-        if not os.path.exists("all_subdomains.txt"): continue
-        
-        with open("all_subdomains.txt", "r") as f:
+        with open("temp_all_subdomains.txt", "r") as f:
             all_subs = set(f.read().splitlines())
         
         wildcards = {s for s in all_subs if '*' in s}
@@ -175,8 +175,26 @@ def run_subdomain_gathering(initial_domain, silent=False):
                 else:
                     clean_subs.add(new_pattern)
 
-        with open("all_subdomains.txt", "w") as f:
+        with open("temp_all_subdomains.txt", "w") as f:
             for d in clean_subs:
                 f.write(d + "\n")
             for w in next_wildcards:
                 f.write(w + "\n")
+
+    gathered_list = []
+    if os.path.exists("temp_all_subdomains.txt"):
+        with open("temp_all_subdomains.txt", "r") as f:
+            gathered_list = f.read().splitlines()
+        
+        if save:
+            now = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+            final_file = f"all_subdomains-{now}.txt"
+            shutil.move("temp_all_subdomains.txt", final_file)
+            if not silent:
+                print(f"[+] Subdomains saved to: {final_file}")
+        else:
+            os.remove("temp_all_subdomains.txt")
+            if not silent:
+                print("[!] Subdomains were not saved to a file (--no-save-subdomains).")
+
+    return gathered_list
