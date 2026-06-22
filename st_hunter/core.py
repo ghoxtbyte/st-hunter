@@ -8,7 +8,7 @@ from .dns_utils import dig_full, get_ns_records, perform_axfr
 from .output import print_status_line, format_time, output_lines, save_output
 
 CHUNK_SIZE = 1000
-CONCURRENCY = 200
+CONCURRENCY = 100
 
 progress = {
     "checked": 0,
