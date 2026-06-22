@@ -1,11 +1,12 @@
 import subprocess
 import shutil
 import os
+import re
 
 TEMP_FILES = [
     "sublist.txt", "shodax.txt", "subs_domain.txt", "alienvault_subs.txt", 
     "urlscan_subs.txt", "assetfinder.txt", "findomain.txt", "amass.txt",
-    "wayback.txt", "abuseipdb.txt", "temp_wildcards.txt"
+    "wayback.txt", "abuseipdb.txt", "chaos.txt", "temp_wildcards.txt"
 ]
 
 def clean_temp_files():
@@ -66,6 +67,11 @@ def execute_tools(target, silent=False):
             print(f"[*] Running Amass on {target}...")
         subprocess.run(f"amass enum -passive -norecursive -noalts -d {target} > amass.txt 2>/dev/null", shell=True)
 
+    if os.environ.get("PDCP_API_KEY") and shutil.which("chaos"):
+        if not silent:
+            print(f"[*] Running Chaos on {target}...")
+        subprocess.run(f"chaos -d {target} -silent > chaos.txt 2>/dev/null", shell=True)
+
     if not silent:
         print(f"[*] Querying Wayback Machine for {target}...")
     wayback_cmd = (
@@ -104,27 +110,73 @@ def run_subdomain_gathering(initial_domain, silent=False):
         scanned_domains.add(current_target)
 
         all_files_str = " ".join(TEMP_FILES[:-1])
-
-        merge_cmd = f"cat {all_files_str} 2>/dev/null | anew all_subdomains.txt > /dev/null 2>&1"
+        merge_cmd = f"cat {all_files_str} 2>/dev/null | awk 'NF' | grep -F '.' | anew all_subdomains.txt > /dev/null 2>&1"
         subprocess.run(merge_cmd, shell=True)
-
-        subprocess.run("grep '^\\*\\.' all_subdomains.txt > temp_wildcards.txt", shell=True)
-        
-        if os.path.exists("temp_wildcards.txt") and os.path.getsize("temp_wildcards.txt") > 0:
-
-            subprocess.run("cat temp_wildcards.txt | anew wildcard_domains.txt > /dev/null 2>&1", shell=True)
-            subprocess.run("grep -v '^\\*\\.' all_subdomains.txt > all_subdomains.clean && mv all_subdomains.clean all_subdomains.txt", shell=True)
-
-            with open("temp_wildcards.txt", "r") as f:
-                wildcards = f.readlines()
-            
-            for w in wildcards:
-                w = w.strip()
-                if not w: continue
-                
-                clean_domain = w.lstrip("*.")
-                
-                if clean_domain not in scanned_domains and clean_domain not in scan_queue:
-                    scan_queue.append(clean_domain)
-
         clean_temp_files()
+
+        
+        if not os.path.exists("all_subdomains.txt"): continue
+        
+        with open("all_subdomains.txt", "r") as f:
+            all_subs = set(f.read().splitlines())
+        
+        wildcards = {s for s in all_subs if '*' in s}
+        clean_subs = all_subs - wildcards
+        
+        if wildcards:
+            with open("wildcard_domains.txt", "a") as f:
+                for w in wildcards:
+                    f.write(w + "\n")
+                    
+        next_wildcards = set()
+        
+        for pattern in wildcards:
+            b = pattern.split('*')[-1]
+            clean_part = b.lstrip('.')
+            
+            if re.match(r'^\*\.[a-zA-Z0-9.-]+$', pattern):
+                target = pattern.lstrip('*.')
+            elif '.' not in clean_part:
+                target = pattern.replace('*', '').replace('..', '.').strip('.')
+            else:
+                target = clean_part
+                
+            if target and target not in scanned_domains and target not in scan_queue:
+                scan_queue.append(target)
+
+            parts = pattern.rsplit('*', 1)
+            A = parts[0]
+            B = parts[1]
+            L = A.split('*')[-1] if '*' in A else A
+            
+            for d in clean_subs:
+                if B and not d.endswith(B): continue
+                if not B and L and not d.startswith(L.lstrip('.')): continue
+                
+                R = d[:-len(B)] if B else d
+                if not R: continue
+                
+                if not L:
+                    X = R
+                else:
+                    if L in R:
+                        X = R.split(L)[-1]
+                    else:
+                        l_clean = L.lstrip('.')
+                        if l_clean in R:
+                            X = R.split(l_clean)[-1]
+                        else:
+                            X = R
+                X = X.lstrip('.')
+                new_pattern = f"{A}{X}{B}"
+                
+                if '*' in new_pattern:
+                    next_wildcards.add(new_pattern)
+                else:
+                    clean_subs.add(new_pattern)
+
+        with open("all_subdomains.txt", "w") as f:
+            for d in clean_subs:
+                f.write(d + "\n")
+            for w in next_wildcards:
+                f.write(w + "\n")
