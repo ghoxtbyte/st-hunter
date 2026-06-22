@@ -16,7 +16,6 @@ def print_status_line(silent_mode):
     percent = (progress["checked"] / progress["total"]) * 100 if progress["total"] else 0
     status_str = f" | {progress['status']}" if progress.get("status") else ""
     
-    # استفاده از \r و ljust برای به‌روزرسانی داینامیک تک‌خطی
     sys.stdout.write(
         f"\r[⏱️ {format_time(elapsed)}] Progress: {progress['checked']}/{progress['total']} ({percent:.1f}%) | Found: {progress['found']}{status_str}".ljust(120)
     )
