@@ -19,23 +19,31 @@ async def get_ns_records(domain):
     return [line.split()[-1].rstrip('.') for line in ns_output.splitlines() if "\tNS\t" in line]
 
 async def perform_axfr(domain, ns_records, silent_mode):
+    discovered_subs = set()
     if not silent_mode:
         sys.stdout.write(f"\r[*] AXFR testing for {domain}...".ljust(120))
         sys.stdout.flush()
     if not ns_records:
-        return
+        return discovered_subs
+        
     for ns in ns_records:
         axfr_output = await dig_full(domain, "AXFR", ns)
-        records = [ln for ln in axfr_output.splitlines() if "\tIN\t" in ln]
+        
+        records = [ln for ln in axfr_output.splitlines() if "\tIN\t" in ln or " IN " in ln]
         if records:
             if not silent_mode:
                 sys.stdout.write("\r" + " " * 120 + "\r")
                 print(f"[+] AXFR succeeded for {domain} via {ns}")
-                for ln in records[:10]:
-                    print(ln)
-                if len(records) > 10:
-                    print(f"... ({len(records)} records)")
             
-            line = f"{domain} AXFR SUCCESS via {ns}"
-            output_lines.append(line)
-            return
+            for ln in records:
+                if not silent_mode:
+                    print(f"    {ln}")
+                
+                
+                parts = ln.split()
+                if parts:
+                    fqdn = parts[0].rstrip(".")
+                    if fqdn.endswith(domain) and fqdn != domain:
+                        discovered_subs.add(fqdn)
+                        
+    return discovered_subs
