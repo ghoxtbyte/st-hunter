@@ -28,7 +28,7 @@ grep -qxF 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' ~/.bashrc || echo '
 # 3. Install Python Requirements
 echo -e "${GREEN}[*] Installing Python libraries...${NC}"
 pip install --upgrade pip
-pip install aiohttp aiodns alive-progress
+pip install aiohttp aiodns alive-progress tldextract
 
 # 4. Install Go-based Tools 
 echo -e "${GREEN}[*] Installing Go tools (Subfinder, Assetfinder, Amass, Anew)...${NC}"
