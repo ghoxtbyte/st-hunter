@@ -66,10 +66,10 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n[!] Scan interrupted by user. Cleaning up temporary files...")
         try:
-            # پاک کردن فایل‌های موقت ابزارهای آنلاین
+            
             clean_temp_files()
             
-            # پاک کردن فایل‌های موقت ترکیبی
+            
             if os.path.exists("temp_all_subdomains.txt"):
                 os.remove("temp_all_subdomains.txt")
             if os.path.exists("wildcard_domains.txt"):
