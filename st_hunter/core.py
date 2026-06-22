@@ -14,7 +14,8 @@ progress = {
     "checked": 0,
     "total": 0,
     "found": 0,
-    "start_time": 0
+    "start_time": 0,
+    "status": ""  # اضافه شدن وضعیت جاری برای نمایش تک‌خطی
 }
 
 async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns, silent_mode, sema):
@@ -46,7 +47,9 @@ async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns,
                         if silent_mode:
                             print(line)
                         else:
-                            print(f"\n[+] {fqdn:<40} → {target:<50} [CNAME → NXDOMAIN]")
+                            # ابتدا خط پیشرفت فعلی را پاک میکنیم، سپس Finding را چاپ میکنیم
+                            sys.stdout.write("\r" + " " * 120 + "\r")
+                            print(f"[+] Vulnerable: {fqdn:<40} → {target:<50}")
         finally:
             progress["checked"] += 1
             print_status_line(silent_mode)
@@ -56,6 +59,7 @@ async def scan_fqdn_list(fqdns, dns_servers, current_domain_ns, silent_mode, out
     progress["found"] = 0
     progress["total"] = len(fqdns)
     progress["start_time"] = time.time()
+    progress["status"] = "Scanning FQDN list"
     
     sema = asyncio.Semaphore(CONCURRENCY)
     
@@ -65,8 +69,7 @@ async def scan_fqdn_list(fqdns, dns_servers, current_domain_ns, silent_mode, out
         tasks = [check_subdomain_fqdn(fqdn, found, dns_servers, current_domain_ns, silent_mode, sema) for fqdn in chunk]
         await asyncio.gather(*tasks)
         await asyncio.sleep(0.2)
-    if not silent_mode:
-        print(f"\n[✓] Done. Found: {progress['found']} vulnerable.")
+        
     if output_file and output_lines:
         save_output(output_file)
 
@@ -75,19 +78,23 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file)
     if dns_servers:
         current_domain_ns = dns_servers
     else:
+        if not silent_mode:
+            sys.stdout.write(f"\r[*] Fetching NS records for {domain}...".ljust(120))
+            sys.stdout.flush()
         current_domain_ns = await get_ns_records(domain)
     
     await perform_axfr(domain, current_domain_ns, silent_mode)
-    
-    if not silent_mode:
-        print(f"[*] Scanning: {domain}")
     
     progress["checked"] = 0
     progress["found"] = 0
     progress["total"] = len(subdomains)
     progress["start_time"] = time.time()
-    random.shuffle(subdomains)
+    progress["status"] = f"Scanning: {domain}"
     
+    if progress["total"] == 0:
+        return
+        
+    random.shuffle(subdomains)
     sema = asyncio.Semaphore(CONCURRENCY)
     
     chunks = [subdomains[i:i + CHUNK_SIZE] for i in range(0, len(subdomains), CHUNK_SIZE)]
@@ -96,9 +103,7 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file)
         tasks = [check_subdomain_fqdn(f"{sub}.{domain}", found, dns_servers, current_domain_ns, silent_mode, sema) for sub in chunk]
         await asyncio.gather(*tasks)
         await asyncio.sleep(0.2)
-    
-    if not silent_mode:
-        print(f"\n[✓] Done with {domain}. Found: {progress['found']} vulnerable.")
+        
     if output_file and output_lines:
         save_output(output_file)
 
@@ -118,6 +123,8 @@ def run_scan(args):
             domains_map.setdefault(domain_part, []).append(sub)
         for domain_part, subs in domains_map.items():
             asyncio.run(scan_domain(domain_part, subs, dns_servers, silent_mode, output_file))
+        if not silent_mode:
+            print()
         return
 
     domains = [args.domain] if args.domain else load_lines(args.domain_list) if args.domain_list else []
@@ -125,7 +132,6 @@ def run_scan(args):
         if args.online_only:
             if not silent_mode:
                 print("\n[*] Starting online subdomain reconnaissance... (This process may take some time)")
-
             run_subdomain_gathering(domain, silent=silent_mode)
             if not silent_mode:
                 print("[+] Subdomain reconnaissance finished.\n")
@@ -144,7 +150,6 @@ def run_scan(args):
         else:
             if not silent_mode:
                 print("\n[*] Starting online subdomain reconnaissance... (This process may take some time)")
-
             run_subdomain_gathering(domain, silent=silent_mode)
             if not silent_mode:
                 print("[+] Subdomain reconnaissance finished.\n")
@@ -159,6 +164,9 @@ def run_scan(args):
                 print("[!] default-subs.txt not found and no --wordlist provided.")
                 continue
             asyncio.run(scan_domain(domain, bruteforce_list, dns_servers, silent_mode, output_file))
+            
+    if not silent_mode:
+        print() # یک لاین نهایی برای تمیز ماندن پرامپت ترمینال
 
 def extract_status(output):
     for line in output.splitlines():
