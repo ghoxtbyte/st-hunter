@@ -3,10 +3,8 @@ import random
 import sys
 import time
 from pathlib import Path
-import aiodns
-import pycares
 from .subdomain_gather import run_subdomain_gathering
-from .dns_utils import get_ns_records, perform_axfr
+from .dns_utils import dig_full, get_ns_records, perform_axfr
 from .output import print_status_line, format_time, output_lines, save_output
 
 CHUNK_SIZE = 1000
@@ -23,41 +21,24 @@ progress = {
 async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns, silent_mode, sema):
     async with sema:
         try:
-
             if dns_servers:
                 cname_dns = random.choice(dns_servers)
             else:
                 cname_dns = random.choice(current_domain_ns) if current_domain_ns else None
-            
-            resolver = aiodns.DNSResolver()
-            if cname_dns:
-                resolver.nameservers = [cname_dns]
-            
-            try:
-                
-                cname_result = await resolver.query(fqdn, 'CNAME')
-                target = cname_result.cname.rstrip('.')
-            except aiodns.error.DNSError:
-                
+            cname_output = await dig_full(fqdn, "CNAME", cname_dns)
+            status = extract_status(cname_output)
+            if status == "NXDOMAIN":
                 return
-
-            if target:
-                if dns_servers:
-                    a_dns = random.choice(dns_servers)
-                else:
-                    a_dns = random.choice(["8.8.8.8", "1.1.1.1"])
-                
-                resolver_a = aiodns.DNSResolver()
-                if a_dns:
-                    resolver_a.nameservers = [a_dns]
-                
-                try:
-                    
-                    await resolver_a.query(target, 'A')
-                    
-                except aiodns.error.DNSError as e:
-                    
-                    if e.args[0] == pycares.errno.ARES_ENOTFOUND:
+            if status == "NOERROR":
+                target = extract_cname_target(cname_output)
+                if target:
+                    if dns_servers:
+                        a_dns = random.choice(dns_servers)
+                    else:
+                        a_dns = random.choice(["8.8.8.8", "1.1.1.1"])
+                    a_output = await dig_full(target, "A", a_dns)
+                    a_status = extract_status(a_output)
+                    if a_status == "NXDOMAIN":
                         progress["found"] += 1
                         found_list.append((fqdn, target))
 
@@ -68,8 +49,6 @@ async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns,
                         else:
                             sys.stdout.write("\r" + " " * 120 + "\r")
                             print(f"[+] Vulnerable: {fqdn:<40} → {target:<50}")
-        except Exception:
-            pass
         finally:
             progress["checked"] += 1
             print_status_line(silent_mode)
@@ -94,6 +73,7 @@ async def scan_fqdn_list(fqdns, dns_servers, current_domain_ns, silent_mode, out
         save_output(output_file)
 
 async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file):
+    global current_domain_ns
     if dns_servers:
         current_domain_ns = dns_servers
     else:
@@ -130,6 +110,7 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file)
         save_output(output_file)
         
 def run_scan(args):
+    global output_lines
     silent_mode = args.silent
     output_file = args.output_file
     save_subs = not args.no_save_subdomains
@@ -186,11 +167,24 @@ def run_scan(args):
                 bruteforce_list = []
                 print("[!] default-subs.txt not found and no --wordlist provided. Continuing with online results only.")
                 
+            
             combined_subs = list(set(subs) | set(bruteforce_list))
             asyncio.run(scan_domain(domain, combined_subs, dns_servers, silent_mode, output_file))
             
     if not silent_mode:
         print()
+
+def extract_status(output):
+    for line in output.splitlines():
+        if "status:" in line:
+            return line.split("status:")[1].split(",")[0].strip()
+    return None
+
+def extract_cname_target(output):
+    for line in output.splitlines():
+        if "\tCNAME\t" in line:
+            return line.split()[-1].strip(".")
+    return None
 
 def load_lines(path):
     try:
