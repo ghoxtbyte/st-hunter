@@ -15,7 +15,7 @@ progress = {
     "total": 0,
     "found": 0,
     "start_time": 0,
-    "status": ""  # اضافه شدن وضعیت جاری برای نمایش تک‌خطی
+    "status": "" 
 }
 
 async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns, silent_mode, sema):
@@ -47,7 +47,7 @@ async def check_subdomain_fqdn(fqdn, found_list, dns_servers, current_domain_ns,
                         if silent_mode:
                             print(line)
                         else:
-                            # ابتدا خط پیشرفت فعلی را پاک میکنیم، سپس Finding را چاپ میکنیم
+                            
                             sys.stdout.write("\r" + " " * 120 + "\r")
                             print(f"[+] Vulnerable: {fqdn:<40} → {target:<50}")
         finally:
@@ -166,7 +166,7 @@ def run_scan(args):
             asyncio.run(scan_domain(domain, bruteforce_list, dns_servers, silent_mode, output_file))
             
     if not silent_mode:
-        print() # یک لاین نهایی برای تمیز ماندن پرامپت ترمینال
+        print()
 
 def extract_status(output):
     for line in output.splitlines():
