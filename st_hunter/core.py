@@ -3,6 +3,7 @@ import random
 import sys
 import time
 from pathlib import Path
+import tldextract
 from .subdomain_gather import run_subdomain_gathering
 from .dns_utils import dig_full, get_ns_records, perform_axfr
 from .output import print_status_line, format_time, output_lines, save_output
@@ -102,7 +103,8 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file,
     chunks = [subdomains[i:i + CHUNK_SIZE] for i in range(0, len(subdomains), CHUNK_SIZE)]
     found = []
     for chunk in chunks:
-        tasks = [check_subdomain_fqdn(f"{sub}.{domain}", found, dns_servers, current_domain_ns, silent_mode, sema) for sub in chunk]
+        
+        tasks = [check_subdomain_fqdn(f"{sub}.{domain}" if sub else domain, found, dns_servers, current_domain_ns, silent_mode, sema) for sub in chunk]
         await asyncio.gather(*tasks)
         await asyncio.sleep(0.2)
         
@@ -116,10 +118,22 @@ def run_scan(args):
     save_subs = not args.no_save_subdomains
     dns_servers = [args.dns_server] if args.dns_server else load_lines(args.dns_list) if args.dns_list else []
     
-    
     if args.subdomains_file:
         fqdns = load_lines(args.subdomains_file)
-        asyncio.run(scan_fqdn_list(fqdns, dns_servers, None, silent_mode, output_file))
+        domains_map = {}
+        for fqdn in fqdns:
+            if '.' not in fqdn:
+                continue
+            
+            
+            ext = tldextract.extract(fqdn)
+            domain_part = f"{ext.domain}.{ext.suffix}"
+            sub_part = ext.subdomain
+            
+            domains_map.setdefault(domain_part, []).append(sub_part)
+            
+        for domain_part, subs in domains_map.items():
+            asyncio.run(scan_domain(domain_part, subs, dns_servers, silent_mode, output_file, save_subs))
         if not silent_mode:
             print()
         return
