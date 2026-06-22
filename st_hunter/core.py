@@ -83,7 +83,14 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file)
             sys.stdout.flush()
         current_domain_ns = await get_ns_records(domain)
     
-    await perform_axfr(domain, current_domain_ns, silent_mode)
+    
+    axfr_fqdns = await perform_axfr(domain, current_domain_ns, silent_mode)
+    
+    
+    axfr_subs = [f.replace(f".{domain}", "") for f in axfr_fqdns if f.endswith(f".{domain}")]
+    
+    
+    subdomains = list(set(subdomains) | set(axfr_subs))
     
     progress["checked"] = 0
     progress["found"] = 0
@@ -106,7 +113,7 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file)
         
     if output_file and output_lines:
         save_output(output_file)
-
+        
 def run_scan(args):
     global output_lines
     silent_mode = args.silent
