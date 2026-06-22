@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import shutil
 sys.stdout.reconfigure(line_buffering=True)
 
 from st_hunter.cli import parse_arguments
@@ -29,11 +30,31 @@ Developed by: ghoxtbyte
 GitHub: https://github.com/ghoxtbyte
 """
 
+def check_dependencies(silent_mode):
+    required_tools = ["dig", "curl", "jq", "subfinder", "anew"]
+    optional_tools = {
+        "shodanx": "Shodan enumeration"
+    }
+    
+    missing_required = [tool for tool in required_tools if shutil.which(tool) is None]
+    
+    if missing_required:
+        print(f"\n[!] Error: Missing required dependencies: {', '.join(missing_required)}")
+        print("[!] Please install them and make sure they are in your system's PATH before running.")
+        sys.exit(1)
+        
+    if not silent_mode:
+        for tool, desc in optional_tools.items():
+            if shutil.which(tool) is None:
+                print(f"[*] Warning: '{tool}' is not installed. {desc} will be skipped.")
+
 def main():
     args = parse_arguments()
     
     if not args.silent:
         print(BANNER)
+        
+    check_dependencies(args.silent)
         
     run_scan(args)
 
