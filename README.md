@@ -2,7 +2,7 @@
 ST-Hunter is a powerful and efficient tool for detecting subdomain takeover vulnerabilities. It supports both online service enumeration and brute-force scanning, with AXFR testing for comprehensive domain reconnaissance.
 
 ## Features
-- Subdomain enumeration using services like Subfinder, Shodan, crt.sh, AlienVault, and urlscan.io
+- Subdomain enumeration using services like Subfinder, Shodan, crt.sh, AlienVault, chaos, and urlscan.io
 - Brute-force subdomain scanning with custom wordlists
 - AXFR testing for DNS zone transfers
 - Concurrent DNS lookups with customizable DNS servers
