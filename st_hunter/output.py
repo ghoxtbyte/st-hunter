@@ -26,5 +26,6 @@ def save_output(output_file):
         with open(output_file, "a") as f:
             for line in output_lines:
                 f.write(line + "\n")
+        output_lines.clear()
     except Exception as e:
         print(f"[!] Failed to write to output file: {e}")
