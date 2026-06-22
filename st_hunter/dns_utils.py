@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from .output import output_lines, print_status_line
 
 async def dig_full(domain, rtype, dns_server=None):
@@ -19,16 +20,16 @@ async def get_ns_records(domain):
 
 async def perform_axfr(domain, ns_records, silent_mode):
     if not silent_mode:
-        print(f"[*] AXFR testing for {domain}")
+        sys.stdout.write(f"\r[*] AXFR testing for {domain}...".ljust(120))
+        sys.stdout.flush()
     if not ns_records:
-        if not silent_mode:
-            print(f"[-] Not Found for {domain}")
         return
     for ns in ns_records:
         axfr_output = await dig_full(domain, "AXFR", ns)
         records = [ln for ln in axfr_output.splitlines() if "\tIN\t" in ln]
         if records:
             if not silent_mode:
+                sys.stdout.write("\r" + " " * 120 + "\r")
                 print(f"[+] AXFR succeeded for {domain} via {ns}")
                 for ln in records[:10]:
                     print(ln)
@@ -37,11 +38,4 @@ async def perform_axfr(domain, ns_records, silent_mode):
             
             line = f"{domain} AXFR SUCCESS via {ns}"
             output_lines.append(line)
-            
-            if not silent_mode:
-                print(f"\n[+] AXFR SUCCESS: {line}")
-            else:
-                print(line)
             return
-    if not silent_mode:
-        print(f"[-] Not Found for {domain}")
