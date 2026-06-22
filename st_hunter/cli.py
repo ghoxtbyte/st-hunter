@@ -22,4 +22,5 @@ Examples:
     parser.add_argument("--dns-list", help="File containing list of DNS servers")
     parser.add_argument("--brute-force-only", action="store_true", help="Only run brute-force scan (skip online services)")
     parser.add_argument("--online-only", action="store_true", help="Only run online services (skip brute-force)")
+    parser.add_argument("--no-save-subdomains", action="store_true", help="Do not save gathered subdomains to a file")
     return parser.parse_args()
