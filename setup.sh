@@ -36,7 +36,7 @@ go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 go install -v github.com/tomnomnom/assetfinder@latest
 go install -v github.com/OWASP/Amass/v3/...@master
 go install -v github.com/tomnomnom/anew@latest
-
+go install -v github.com/projectdiscovery/chaos-client/cmd/chaos@latest
 # 5. Install Findomain (Binary)
 echo -e "${GREEN}[*] Installing Findomain...${NC}"
 curl -LO https://github.com/findomain/findomain/releases/latest/download/findomain-linux.zip
@@ -52,7 +52,7 @@ go install -v github.com/ChiggerX/shodanx@latest
 # 7. Final Verification
 echo -e "${BLUE}--------------------------------------${NC}"
 echo -e "${BLUE}[+] Setup Complete! Verifying tools:${NC}"
-TOOLS="subfinder assetfinder amass findomain anew shodanx dig jq"
+TOOLS="subfinder assetfinder amass findomain anew shodanx chaos dig jq"
 
 for tool in $TOOLS; do
     if command -v $tool &> /dev/null; then
