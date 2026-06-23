@@ -103,7 +103,6 @@ async def scan_domain(domain, subdomains, dns_servers, silent_mode, output_file,
     chunks = [subdomains[i:i + CHUNK_SIZE] for i in range(0, len(subdomains), CHUNK_SIZE)]
     found = []
     for chunk in chunks:
-        
         tasks = [check_subdomain_fqdn(f"{sub}.{domain}" if sub else domain, found, dns_servers, current_domain_ns, silent_mode, sema) for sub in chunk]
         await asyncio.gather(*tasks)
         await asyncio.sleep(0.2)
@@ -127,7 +126,6 @@ def run_scan(args):
             
             ext = tldextract.extract(fqdn)
             domain_part = f"{ext.domain}.{ext.suffix}"
-            
             
             if not domain_part or domain_part.strip() in [".", ""]:
                 continue
