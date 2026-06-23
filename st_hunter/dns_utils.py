@@ -24,7 +24,6 @@ async def get_ns_records(domain):
 async def perform_axfr(domain, ns_records, silent_mode, save_subs=True):
     discovered_subs = set()
     
-    
     if not domain or domain.strip() in [".", ""]:
         return discovered_subs
         
@@ -40,7 +39,6 @@ async def perform_axfr(domain, ns_records, silent_mode, save_subs=True):
         
         records = [ln for ln in axfr_output.splitlines() if "\tIN\t" in ln or " IN " in ln]
         if records:
-            
             msg = f"[+] AXFR VULNERABLE: {domain} via {ns}"
             if not silent_mode:
                 sys.stdout.write("\r" + " " * 120 + "\r")
