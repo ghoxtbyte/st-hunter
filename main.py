@@ -68,13 +68,6 @@ if __name__ == "__main__":
         try:
             
             clean_temp_files()
-            
-            
-            if os.path.exists("temp_all_subdomains.txt"):
-                os.remove("temp_all_subdomains.txt")
-            if os.path.exists("wildcard_domains.txt"):
-                os.remove("wildcard_domains.txt")
-                
         except Exception as e:
             print(f"[!] Error during cleanup: {e}")
             
