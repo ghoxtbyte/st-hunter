@@ -21,7 +21,7 @@ Y&Ss         S&S             S&S  SSS&S  S&S       S&S  S&S    S&S       S&S    
   `S*S       S&S             S&S    S&S  S&S       S&S  S&S    S&S       S&S       S&S     S&S~YSY%b   
    l*S       S*S             S*S    S*S  S*b       d*S  S*S    S*S       S*S       S*b     S*S   `S%b  
   .S*P       S*S             S*S    S*S  S*S.     .S*S  S*S    S*S       S*S       S*S.    S*S    S%S  
-sSS*S        S*S             S*S    S*S   SSSbs_sdSSS   S*S    S*S       S*S        SSSbs  S*S    S&S  
+sSS*S        S*S             S%S    S%S   SSSbs_sdSSS   S*S    S*S       S*S        SSSbs  S*S    S&S  
 YSS'         S*S             SSS    S*S    YSSP~YSSY    S*S    SSS       S*S         YSSP  S*S    SSS  
              SP                     SP                  SP               SP                SP          
              Y                      Y                   Y                Y                 Y           
@@ -66,7 +66,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n[!] Scan interrupted by user. Cleaning up temporary files...")
         try:
-            
             clean_temp_files()
         except Exception as e:
             print(f"[!] Error during cleanup: {e}")
