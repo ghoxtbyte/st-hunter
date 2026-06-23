@@ -125,11 +125,14 @@ def run_scan(args):
             if '.' not in fqdn:
                 continue
             
-            
             ext = tldextract.extract(fqdn)
             domain_part = f"{ext.domain}.{ext.suffix}"
-            sub_part = ext.subdomain
             
+            
+            if not domain_part or domain_part.strip() in [".", ""]:
+                continue
+                
+            sub_part = ext.subdomain
             domains_map.setdefault(domain_part, []).append(sub_part)
             
         for domain_part, subs in domains_map.items():
