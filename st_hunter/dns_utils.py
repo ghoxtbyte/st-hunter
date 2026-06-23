@@ -16,14 +16,22 @@ async def dig_full(domain, rtype, dns_server=None):
         return ""
 
 async def get_ns_records(domain):
+    if not domain or domain.strip() in [".", ""]:
+        return []
     ns_output = await dig_full(domain, "NS")
     return [line.split()[-1].rstrip('.') for line in ns_output.splitlines() if "\tNS\t" in line]
 
 async def perform_axfr(domain, ns_records, silent_mode, save_subs=True):
     discovered_subs = set()
+    
+    
+    if not domain or domain.strip() in [".", ""]:
+        return discovered_subs
+        
     if not silent_mode:
         sys.stdout.write(f"\r[*] AXFR testing for {domain}...".ljust(120))
         sys.stdout.flush()
+        
     if not ns_records:
         return discovered_subs
         
@@ -38,7 +46,6 @@ async def perform_axfr(domain, ns_records, silent_mode, save_subs=True):
                 sys.stdout.write("\r" + " " * 120 + "\r")
                 print(msg)
             else:
-                
                 print(msg)
             
             axfr_full_text = []
@@ -51,9 +58,7 @@ async def perform_axfr(domain, ns_records, silent_mode, save_subs=True):
                     if fqdn.endswith(domain) and fqdn != domain:
                         discovered_subs.add(fqdn)
                         
-            
             output_lines.append(f"[AXFR VULNERABILITY] Domain: {domain} | NS: {ns}")
-            
             
             if save_subs:
                 timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
