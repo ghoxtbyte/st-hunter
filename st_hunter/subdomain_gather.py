@@ -6,31 +6,56 @@ import time
 from datetime import datetime
 
 
-SESSION_ID = str(int(time.time()))
+TEMP_DIR = "/tmp"
 
-TEMP_FILES = [
-    f"sublist_{SESSION_ID}.txt", f"shodax_{SESSION_ID}.txt", f"subs_domain_{SESSION_ID}.txt", 
-    f"alienvault_subs_{SESSION_ID}.txt", f"urlscan_subs_{SESSION_ID}.txt", f"assetfinder_{SESSION_ID}.txt", 
-    f"findomain_{SESSION_ID}.txt", f"amass_{SESSION_ID}.txt", f"wayback_{SESSION_ID}.txt", 
-    f"abuseipdb_{SESSION_ID}.txt", f"chaos_{SESSION_ID}.txt"
+
+SESSION_ID = f"{int(time.time())}_{os.getpid()}"
+
+TOOL_FILES = [
+    "sublist", "shodax", "subs_domain", "alienvault_subs", 
+    "urlscan_subs", "assetfinder", "findomain", "amass", 
+    "wayback", "abuseipdb", "chaos"
 ]
 
-TEMP_ALL_SUBS = f"temp_all_subdomains_{SESSION_ID}.txt"
-WILDCARD_DOMAINS = f"wildcard_domains_{SESSION_ID}.txt"
+
+TEMP_FILES = [os.path.join(TEMP_DIR, f"{tool}_{SESSION_ID}.txt") for tool in TOOL_FILES]
+TEMP_ALL_SUBS = os.path.join(TEMP_DIR, f"temp_all_subdomains_{SESSION_ID}.txt")
+WILDCARD_DOMAINS = os.path.join(TEMP_DIR, f"wildcard_domains_{SESSION_ID}.txt")
 
 def clean_temp_files():
+    
+    if not os.path.exists(TEMP_DIR):
+        return
     files_to_remove = TEMP_FILES + [TEMP_ALL_SUBS, WILDCARD_DOMAINS]
-    cmd = "rm -f " + " ".join(files_to_remove)
-    subprocess.run(cmd, shell=True)
+    for fpath in files_to_remove:
+        if os.path.exists(fpath):
+            try:
+                os.remove(fpath)
+            except:
+                pass
 
 def execute_tools(target, silent=False):
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    
+    sublist_path = os.path.join(TEMP_DIR, f"sublist_{SESSION_ID}.txt")
+    shodax_path = os.path.join(TEMP_DIR, f"shodax_{SESSION_ID}.txt")
+    subs_domain_path = os.path.join(TEMP_DIR, f"subs_domain_{SESSION_ID}.txt")
+    alienvault_path = os.path.join(TEMP_DIR, f"alienvault_subs_{SESSION_ID}.txt")
+    urlscan_path = os.path.join(TEMP_DIR, f"urlscan_subs_{SESSION_ID}.txt")
+    assetfinder_path = os.path.join(TEMP_DIR, f"assetfinder_{SESSION_ID}.txt")
+    findomain_path = os.path.join(TEMP_DIR, f"findomain_{SESSION_ID}.txt")
+    amass_path = os.path.join(TEMP_DIR, f"amass_{SESSION_ID}.txt")
+    chaos_path = os.path.join(TEMP_DIR, f"chaos_{SESSION_ID}.txt")
+    wayback_path = os.path.join(TEMP_DIR, f"wayback_{SESSION_ID}.txt")
+    abuseipdb_path = os.path.join(TEMP_DIR, f"abuseipdb_{SESSION_ID}.txt")
+
     if not silent:
         print(f"[*] Running Subfinder on {target}...")
-    subprocess.run(f"subfinder -d {target} -silent -o sublist_{SESSION_ID}.txt > /dev/null 2>&1", shell=True)
+    subprocess.run(f"subfinder -d {target} -silent -o {sublist_path} > /dev/null 2>&1", shell=True)
     
     if not silent:
         print(f"[*] Running Shodanx on {target}...")
-    subprocess.run(f"shodanx subdomain -d {target} -ra -o shodax_{SESSION_ID}.txt > /dev/null 2>&1", shell=True)
+    subprocess.run(f"shodanx subdomain -d {target} -ra -o {shodax_path} > /dev/null 2>&1", shell=True)
     
     if not silent:
         print(f"[*] Querying crt.sh for {target}...")
@@ -38,7 +63,7 @@ def execute_tools(target, silent=False):
         f"curl -s 'https://crt.sh/json?q=%25.{target}' | "
         r"jq -r '.[].name_value' 2>/dev/null | "
         r"sed 's/\*\.]//g' | "
-        f"sort -u >> subs_domain_{SESSION_ID}.txt"
+        f"sort -u >> {subs_domain_path}"
     )
     subprocess.run(crt_cmd, shell=True)
     
@@ -48,7 +73,7 @@ def execute_tools(target, silent=False):
         f"curl -s 'https://otx.alienvault.com/api/v1/indicators/hostname/{target}/passive_dns' | "
         r"jq -r '.passive_dns[]?.hostname' 2>/dev/null | "
         fr"grep -E '^[a-zA-Z0-9.-]+\.{target}$' | "
-        f"anew > alienvault_subs_{SESSION_ID}.txt"
+        f"anew > {alienvault_path}"
     )
     subprocess.run(alienvault_cmd, shell=True)
     
@@ -58,36 +83,36 @@ def execute_tools(target, silent=False):
         f"curl -s 'https://urlscan.io/api/v1/search/?q=domain:{target}&size=10000' | "
         r"jq -r '.results[]?.page?.domain' 2>/dev/null | "
         fr"grep -E '^[a-zA-Z0-9.-]+\.{target}$' | "
-        f"anew > urlscan_subs_{SESSION_ID}.txt"
+        f"anew > {urlscan_path}"
     )
     subprocess.run(urlscan_cmd, shell=True)
 
     if shutil.which("assetfinder"):
         if not silent:
             print(f"[*] Running Assetfinder on {target}...")
-        subprocess.run(f"assetfinder --subs-only {target} > assetfinder_{SESSION_ID}.txt 2>/dev/null", shell=True)
+        subprocess.run(f"assetfinder --subs-only {target} > {assetfinder_path} 2>/dev/null", shell=True)
 
     if shutil.which("findomain"):
         if not silent:
             print(f"[*] Running Findomain on {target}...")
-        subprocess.run(f"findomain -t {target} -q > findomain_{SESSION_ID}.txt 2>/dev/null", shell=True)
+        subprocess.run(f"findomain -t {target} -q > {findomain_path} 2>/dev/null", shell=True)
 
     if shutil.which("amass"):
         if not silent:
             print(f"[*] Running Amass on {target}...")
-        subprocess.run(f"amass enum -passive -norecursive -noalts -d {target} > amass_{SESSION_ID}.txt 2>/dev/null", shell=True)
+        subprocess.run(f"amass enum -passive -norecursive -noalts -d {target} > {amass_path} 2>/dev/null", shell=True)
 
     if os.environ.get("PDCP_API_KEY") and shutil.which("chaos"):
         if not silent:
             print(f"[*] Running Chaos on {target}...")
-        subprocess.run(f"chaos -d {target} -silent > chaos_{SESSION_ID}.txt 2>/dev/null", shell=True)
+        subprocess.run(f"chaos -d {target} -silent > {chaos_path} 2>/dev/null", shell=True)
 
     if not silent:
         print(f"[*] Querying Wayback Machine for {target}...")
     wayback_cmd = (
         f"curl -sk 'http://web.archive.org/cdx/search/cdx?url=*.{target}&output=txt&fl=original&collapse=urlkey&page=' | "
         "awk -F/ '{gsub(/:.*/, \"\", $3); print $3}' | "
-        f"sort -u > wayback_{SESSION_ID}.txt"
+        f"sort -u > {wayback_path}"
     )
     subprocess.run(wayback_cmd, shell=True)
 
@@ -99,7 +124,7 @@ def execute_tools(target, silent=False):
         r"sed -E 's/<\/?li>//g' | "
         fr"sed -e 's/$/.{target}/' | "
         r"sed 's/^[[:space:]]*//' | "
-        f"sort -u > abuseipdb_{SESSION_ID}.txt"
+        f"sort -u > {abuseipdb_path}"
     )
     subprocess.run(abuseipdb_cmd, shell=True)
 
@@ -121,7 +146,6 @@ def run_subdomain_gathering(initial_domain, silent=False, save=True):
         all_files_str = " ".join(TEMP_FILES)
         merge_cmd = f"cat {all_files_str} 2>/dev/null | awk 'NF' | grep -F '.' | anew {TEMP_ALL_SUBS} > /dev/null 2>&1"
         subprocess.run(merge_cmd, shell=True)
-        
         
         cmd = "rm -f " + " ".join(TEMP_FILES)
         subprocess.run(cmd, shell=True)
